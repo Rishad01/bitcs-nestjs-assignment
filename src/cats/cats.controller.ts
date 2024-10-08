@@ -1,4 +1,17 @@
-import { Controller, Get, Post, Put,Req, Body, Query, Param, Delete,UsePipes,UseGuards, BadRequestException  } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Req,
+  Body,
+  Query,
+  Param,
+  Delete,
+  UsePipes,
+  UseGuards,
+  BadRequestException,
+} from '@nestjs/common';
 import { CatsService } from './cats.service';
 import { Cat } from './cats.entity';
 import { CreateCatDto } from './create-cat.dto';
@@ -11,7 +24,7 @@ import * as Joi from 'joi';
 const updateCatSchema = Joi.object({
   name: Joi.string().optional(),
   age: Joi.number().optional(),
-  breed: Joi.string().optional(),  
+  breed: Joi.string().optional(),
 });
 
 @Controller('cats')
@@ -20,15 +33,20 @@ export class CatsController {
 
   @Get()
   async findAll(
-    @Query('page') page: number = 1,     
-    @Query('limit') limit: number = 10,  
-  ): Promise<Cat[]> {
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ): Promise<{ cats: Cat[]; total: number }> {
     return this.catsService.findAll(page, limit);
   }
 
   @Get(':id')
   findOne(@Param('id') id: string): Promise<Cat> {
     return this.catsService.findOne(+id);
+  }
+
+  @Get('get')
+  findOnenew(): Promise<Cat> {
+    return this.catsService.findOne(1);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -41,37 +59,52 @@ export class CatsController {
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string): Promise<void> {
-    return this.catsService.remove(+id); 
+    return this.catsService.remove(+id);
   }
 
-  @Get('search')
-async findByAgeRange(
-  @Query('age_lte') ageLte: string,
-  @Query('age_gte') ageGte: string,  
-): Promise<Cat[]> {
-  const parsedAgeLte = ageLte ? parseInt(ageLte, 10) : null;
-  const parsedAgeGte = ageGte ? parseInt(ageGte, 10) : null;
+  // @Get('search')
+  // async findByAgeRange(
+  //   @Query('age_lte') ageLte: number,
+  //   @Query('age_gte') ageGte: number,
+  // ): Promise<Cat[]> {
+  //   // const parsedAgeLte = ageLte ? parseInt(ageLte, 10) : null;
+  //   // const parsedAgeGte = ageGte ? parseInt(ageGte, 10) : null;
 
-  if (isNaN(parsedAgeLte) || isNaN(parsedAgeGte)) {
-    throw new BadRequestException('Invalid age query parameters');
-  }
+  //   // if (isNaN(parsedAgeLte) || isNaN(parsedAgeGte)) {
+  //   //   throw new BadRequestException('Invalid age query parameters');
+  //   // }
 
-  return this.catsService.findByAgeRange(parsedAgeLte, parsedAgeGte);
-}
+  //   console.log(ageLte, ageGte);
+  //   return this.catsService.findByAgeRange(ageLte, ageGte);
+  // }
+
+  // @Get('/fetch')
+  // async fetchByAgeRange(
+  //   @Query('age_lte') ageLte: number,
+  //   @Query('age_gte') ageGte: number,
+  // ): Promise<Cat[]> {
+  //   // const parsedAgeLte = ageLte ? parseInt(ageLte, 10) : null;
+  //   // const parsedAgeGte = ageGte ? parseInt(ageGte, 10) : null;
+
+  //   // if (isNaN(parsedAgeLte) || isNaN(parsedAgeGte)) {
+  //   //   throw new BadRequestException('Invalid age query parameters');
+  //   // }
+
+  //   console.log(ageLte, ageGte);
+  //   return this.catsService.findByAgeRange(ageLte, ageGte);
+  // }
+
 
   @UseGuards(JwtAuthGuard)
-@Put(':id')
-@UsePipes(new JoiValidationPipe(updateCatSchema)) 
-async updateCat(
-  @Param('id') id: string, 
-  @Body() updateCatDto: UpdateCatDto
-) {
-  console.log('Received DTO:', updateCatDto); 
-  const { error } = updateCatSchema.validate(updateCatDto);
-  if (error) {
-    throw new BadRequestException(`Validation failed: ${error.message}`);
-  }
+  @UsePipes(new JoiValidationPipe(updateCatSchema))
+  @Put(':id')
+  async updateCat(@Param('id') id: string, @Body() updateCatDto: UpdateCatDto) {
+    console.log('Received DTO:', updateCatDto);
+    // const { error } = updateCatSchema.validate(updateCatDto);
+    // if (error) {
+    //   throw new BadRequestException(`Validation failed: ${error.message}`);
+    // }
 
-  return this.catsService.update(+id, updateCatDto);
-}
+    return this.catsService.update(+id, updateCatDto);
+  }
 }
