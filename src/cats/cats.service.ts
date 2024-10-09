@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { UpdateCatDto } from './update-cat.dto'
+import { UpdateCatDto } from './update-cat.dto';
 import { Cat } from './cats.entity';
 
 @Injectable()
@@ -11,7 +11,10 @@ export class CatsService {
     private catsRepository: Repository<Cat>,
   ) {}
 
-  async findAll(page: number, limit: number): Promise<{ cats: Cat[]; total: number }> {
+  async findAll(
+    page: number,
+    limit: number,
+  ): Promise<{ cats: Cat[]; total: number }> {
     const offset = (page - 1) * limit;
 
     const [cats, total] = await this.catsRepository.findAndCount({
@@ -19,7 +22,7 @@ export class CatsService {
       take: limit,
     });
 
-    return {cats,total};
+    return { cats, total };
   }
 
   findOne(id: number): Promise<Cat> {
@@ -29,8 +32,6 @@ export class CatsService {
   async create(cat: Cat): Promise<Cat> {
     return this.catsRepository.save(cat);
   }
-
-  
 
   async remove(id: number): Promise<void> {
     await this.catsRepository.delete(id);
@@ -47,12 +48,11 @@ export class CatsService {
     // }
 
     // return await query.getMany();
-    return "fetched";
+    return 'fetched';
   }
 
   async update(id: number, updateCatDto: UpdateCatDto): Promise<Cat> {
     await this.catsRepository.update(id, updateCatDto);
     return this.catsRepository.findOneBy({ id });
   }
-
 }

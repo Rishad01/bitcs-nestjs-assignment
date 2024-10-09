@@ -9,7 +9,7 @@ import { UsersService } from '../users/users.service';
   imports: [
     PassportModule,
     JwtModule.register({
-      secret: 'my-secret-key', // Store securely in environment variables
+      secret: 'my-secret-key',
       signOptions: { expiresIn: '1h' },
     }),
     forwardRef(() => UsersModule)

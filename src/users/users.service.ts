@@ -29,7 +29,7 @@ export class UsersService {
 
   async login(user: any) {
     const payload = { email: user.email, sub: user.id };
-    const token = this.jwtService.sign(payload);  // Generate the access token
+    const token = this.jwtService.sign(payload);
     
     console.log('Generated JWT Access Token:', token);
 

@@ -6,9 +6,9 @@ import { User } from './users.user.entity';
 import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User]),forwardRef(() =>AuthModule)], // Import the User entity
+  imports: [TypeOrmModule.forFeature([User]),forwardRef(() =>AuthModule)],
   controllers: [UsersController],
   providers: [UsersService],
-  exports: [UsersService], // Export UsersService to be used in other modules
+  exports: [UsersService],
 })
 export class UsersModule {}
