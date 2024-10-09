@@ -94,17 +94,14 @@ export class CatsController {
   //   return this.catsService.findByAgeRange(ageLte, ageGte);
   // }
 
-
   @UseGuards(JwtAuthGuard)
-  @UsePipes(new JoiValidationPipe(updateCatSchema))
   @Put(':id')
-  async updateCat(@Param('id') id: string, @Body() updateCatDto: UpdateCatDto) {
-    console.log('Received DTO:', updateCatDto);
-    // const { error } = updateCatSchema.validate(updateCatDto);
-    // if (error) {
-    //   throw new BadRequestException(`Validation failed: ${error.message}`);
-    // }
-
-    return this.catsService.update(+id, updateCatDto);
+  async updateUser(
+    @Param('id') id: string,
+    @Body(new JoiValidationPipe(updateCatSchema)) updateCatDto: UpdateCatDto,
+  ) {
+    const parsedId = Number(id);
+    
+    return this.catsService.update(parsedId, updateCatDto);
   }
 }
