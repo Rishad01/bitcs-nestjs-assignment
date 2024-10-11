@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Put,
-  Req,
   Body,
   Query,
   Param,
@@ -11,6 +10,7 @@ import {
   UsePipes,
   UseGuards,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { CatsService } from './cats.service';
 import { Cat } from './cats.entity';
@@ -39,20 +39,50 @@ export class CatsController {
     return this.catsService.findAll(page, limit);
   }
 
+  // @Get('check')
+  // checkRoute() {
+  //   console.log('Check route called'); // Log to ensure the route is hit
+  //   return { message: 'Route was called successfully' }; // Respond with a message
+  // }
+
+  @Get('search')
+  async findByAgeRange(
+    @Query('age_lte') ageLte: number,
+    @Query('age_gte') ageGte: number,
+  ): Promise<{ message: string; cats?: Cat[] }> {
+    const parsedAgeLte = ageLte ? parseInt(ageLte.toString(), 10) : null;
+    const parsedAgeGte = ageGte ? parseInt(ageGte.toString(), 10) : null;
+
+    if (!ageGte || !ageLte) {
+      throw new BadRequestException('Mention proper Range of Age');
+    }
+    if (isNaN(parsedAgeLte) || isNaN(parsedAgeGte)) {
+      throw new BadRequestException('Invalid age query parameters');
+    }
+
+    const cats = await this.catsService.findByAgeRange(
+      parsedAgeLte,
+      parsedAgeGte,
+    );
+
+    if (!cats.length) {
+      throw new NotFoundException(
+        'No cats found within the specified age range',
+      );
+    }
+
+    return { message: 'Cats found', cats };
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string): Promise<Cat> {
     return this.catsService.findOne(+id);
   }
 
-  @Get('get')
-  findOnenew(): Promise<Cat> {
-    return this.catsService.findOne(1);
-  }
-
   @UseGuards(JwtAuthGuard)
   @Post()
   @UsePipes(new JoiValidationPipe(createCatSchema))
-  create(@Body() createCatDto: CreateCatDto, @Req() request: Request) {
+  create(@Body() createCatDto: CreateCatDto) {
     return this.catsService.create(createCatDto);
   }
 
@@ -62,38 +92,6 @@ export class CatsController {
     return this.catsService.remove(+id);
   }
 
-  // @Get('search')
-  // async findByAgeRange(
-  //   @Query('age_lte') ageLte: number,
-  //   @Query('age_gte') ageGte: number,
-  // ): Promise<Cat[]> {
-  //   // const parsedAgeLte = ageLte ? parseInt(ageLte, 10) : null;
-  //   // const parsedAgeGte = ageGte ? parseInt(ageGte, 10) : null;
-
-  //   // if (isNaN(parsedAgeLte) || isNaN(parsedAgeGte)) {
-  //   //   throw new BadRequestException('Invalid age query parameters');
-  //   // }
-
-  //   console.log(ageLte, ageGte);
-  //   return this.catsService.findByAgeRange(ageLte, ageGte);
-  // }
-
-  // @Get('/fetch')
-  // async fetchByAgeRange(
-  //   @Query('age_lte') ageLte: number,
-  //   @Query('age_gte') ageGte: number,
-  // ): Promise<Cat[]> {
-  //   // const parsedAgeLte = ageLte ? parseInt(ageLte, 10) : null;
-  //   // const parsedAgeGte = ageGte ? parseInt(ageGte, 10) : null;
-
-  //   // if (isNaN(parsedAgeLte) || isNaN(parsedAgeGte)) {
-  //   //   throw new BadRequestException('Invalid age query parameters');
-  //   // }
-
-  //   console.log(ageLte, ageGte);
-  //   return this.catsService.findByAgeRange(ageLte, ageGte);
-  // }
-
   @UseGuards(JwtAuthGuard)
   @Put(':id')
   async updateUser(
@@ -101,7 +99,7 @@ export class CatsController {
     @Body(new JoiValidationPipe(updateCatSchema)) updateCatDto: UpdateCatDto,
   ) {
     const parsedId = Number(id);
-    
+
     return this.catsService.update(parsedId, updateCatDto);
   }
 }

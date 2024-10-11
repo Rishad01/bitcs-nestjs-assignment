@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { UpdateCatDto } from './update-cat.dto';
 import { Cat } from './cats.entity';
 
@@ -22,33 +22,47 @@ export class CatsService {
       take: limit,
     });
 
+    if (total === 0) {
+      throw new NotFoundException('No cats found in the database');
+    }
+
+    if (cats.length === 0) {
+      throw new NotFoundException(`No cats found on page ${page}`);
+    }
+
     return { cats, total };
   }
 
-  findOne(id: number): Promise<Cat> {
-    return this.catsRepository.findOneBy({ id });
+  async findOne(id: number): Promise<Cat> {
+    const cat = await this.catsRepository.findOneBy({ id });
+
+    if (!cat) {
+      throw new NotFoundException(`Cat with ID ${id} not found`);
+    }
+
+    return cat;
   }
 
   async create(cat: Cat): Promise<Cat> {
     return this.catsRepository.save(cat);
   }
 
-  async remove(id: number): Promise<void> {
-    await this.catsRepository.delete(id);
+  async remove(id: number): Promise<any> {
+    const result = await this.catsRepository.delete(id);
+
+    if (result.affected === 0) {
+      throw new NotFoundException(`Cat with ID ${id} not found`);
+    } else {
+      return 'deleted';
+    }
   }
 
-  async findByAgeRange(ageLte: number, ageGte: number): Promise<any> {
-    // const query = this.catsRepository.createQueryBuilder('cat');
-
-    // if (ageLte) {
-    //   query.andWhere('cat.age <= :ageLte', { ageLte });
-    // }
-    // if (ageGte) {
-    //   query.andWhere('cat.age >= :ageGte', { ageGte });
-    // }
-
-    // return await query.getMany();
-    return 'fetched';
+  async findByAgeRange(ageLte: number, ageGte: number): Promise<Cat[]> {
+    return this.catsRepository.find({
+      where: {
+        age: Between(ageGte, ageLte),
+      },
+    });
   }
 
   async update(id: number, updateCatDto: UpdateCatDto): Promise<Cat> {

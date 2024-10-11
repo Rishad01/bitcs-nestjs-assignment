@@ -1,4 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './users.user.entity';
@@ -13,25 +18,44 @@ export class UsersService {
     private jwtService: JwtService,
   ) {}
 
-  async createUser(email: string, password: string): Promise<User> {
+  async createUser(email: string, password: string): Promise<any> {
+    const existingUser = await this.usersRepository.findOne({
+      where: { email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('User already exists with this email');
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = this.usersRepository.create({ email, password: hashedPassword });
-    return this.usersRepository.save(user);
+
+    const newUser = this.usersRepository.create({
+      email,
+      password: hashedPassword,
+    });
+
+    return this.usersRepository.save(newUser);
   }
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.usersRepository.findOne({ where: { email } });
-    if (user && (await bcrypt.compare(password, user.password))) {
-      return user;
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid email or password.');
     }
-    return null;
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid password.');
+    }
+
+    return { email: user.email, id: user.id };
   }
 
   async login(user: any) {
     const payload = { email: user.email, sub: user.id };
     const token = this.jwtService.sign(payload);
-    
-    console.log('Generated JWT Access Token:', token);
 
     return {
       access_token: token,

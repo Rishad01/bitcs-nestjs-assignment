@@ -1,10 +1,16 @@
-// src/users/users.controller.ts
-import { Body, Controller, Post, BadRequestException, UsePipes, ValidationPipe } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  BadRequestException,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './create-user.dto';
 import { LoginUserDto } from './create-user.dto';
 import { createUserSchema, loginUserSchema } from './create-user.schema';
-import {JoiValidationPipe} from '../pipes/validation.pipe';
+import { JoiValidationPipe } from '../pipes/validation.pipe';
 import * as Joi from 'joi';
 
 @Controller('auth')
@@ -18,7 +24,12 @@ export class UsersController {
     if (error) {
       throw new BadRequestException('Validation failed');
     }
-    return this.usersService.createUser(createUserDto.email, createUserDto.password);
+    const savedUser = this.usersService.createUser(
+      createUserDto.email,
+      createUserDto.password,
+    );
+
+    return { email: (await savedUser).email, id: (await savedUser).id };
   }
 
   @Post('login')
@@ -28,7 +39,10 @@ export class UsersController {
     if (error) {
       throw new BadRequestException('Validation failed');
     }
-    const user = await this.usersService.validateUser(loginUserDto.email, loginUserDto.password);
+    const user = await this.usersService.validateUser(
+      loginUserDto.email,
+      loginUserDto.password,
+    );
     if (!user) {
       throw new BadRequestException('Invalid credentials');
     }
